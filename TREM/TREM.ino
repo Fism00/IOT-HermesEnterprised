@@ -11,10 +11,17 @@ const String URL   = "test.mosquitto.org";
 const int PORT     = 1883;
 const String USR   = "";
 const String broker_Pass  = "";
-const String Topic = "DSM1";
+const String Topic = "KLahold";
+const String Topic = "Kaus";
 
+const int ledPin = 2;
 
 void setup() {
+
+  pinMode(ledPin, OUTPUT);
+  digitalWrite(ledPin, LOW);
+
+
  Serial.begin(115200);
  Serial.println("Conectando ao Wifi");
  WiFi.begin(SSID, PASS);
@@ -40,10 +47,16 @@ void setup() {
  
 void loop() {
 String mensagem = "Gustavo: ";
-mensagem += "salve quebrada";
+if (Serial.available()>0){
+  mensagem += Serial.readStringUntil('\n');
+  mqtt.publish(OtherTopic.c_str(),mensagem.c_str());
 
-mqtt.publish(Topic.c_str(),mensagem.c_str());
+}
+
 mqtt.loop();
 delay(1000);
+if(mensagem.avaliable()>0){
+    digitalWrite(ledPin, HIGH);
+}
 
 }
