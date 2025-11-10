@@ -3,6 +3,11 @@
 
 WiFiClient client;
 PubSubClient mqtt(client);
+//pin usados
+const byte TRIGGER_PIN = 5;
+const byte ECHO_PIN = 18;
+
+
 
 //constantes p/broker
 const String URL   = "test.mosquitto.org";
@@ -18,6 +23,11 @@ const String pass = "8120gv08";
 void setup() {
   
   Serial.begin(115200);
+
+  // pinos output ou input
+   pinMode(TRIGGER_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+
   Serial.println("Conectando ao WiFi");
   WiFi.begin(ssid, pass);
   while(WiFi.status() != WL_CONNECTED) {
@@ -41,11 +51,32 @@ void setup() {
 
 }
 
+long lerDistancia() {
+  digitalWrite(TRIGGER_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIGGER_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIGGER_PIN, LOW);
+  
+  long duracao = pulseIn(ECHO_PIN, HIGH);
+  long distancia = duracao * 349.24 / 2 / 10000;
+  
+  return distancia;
+}
 void loop() {
-  String mensagem = "Heitor: ";
-  mensagem += "sinistron voltaras a jogatina";
 
-  mqtt.publish(topic.c_str(),mensagem.c_str);
+   long distancia = lerDistancia();
+  
+  Serial.print("Distância: ");
+  Serial.print(distancia);
+  Serial.println(" cm");
+  
+  if (distancia < 10) {
+    Serial.println("Objeto próximo!");
+  }
+  
+  delay(500);
+
   mqtt.loop();
   delay(1000);
 
