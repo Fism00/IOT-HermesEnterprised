@@ -1,13 +1,24 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
+#include <DHT.h>
+
 
 WiFiClient client;
 PubSubClient mqtt(client);
 //pin usados
-const byte TRIGGER_PIN = 5;
-const byte ECHO_PIN = 18;
 
+const byte TRIGGER_ULTRA = 22;
+const byte ECHO_ULTRA = 23;
+const byte LED = 19;
+const byte LDR = 34;
+const byte RGB_R = 14;
+const byte RGB_G = 26;
+const byte RGB_B = 25;
 
+//dh11 config
+#define DHT_PIN 4
+#define DHTTYPE DHT11
+DHT dht(DHT_PIN, DHTTYPE);
 
 //constantes p/broker
 const String URL   = "test.mosquitto.org";
@@ -25,8 +36,10 @@ void setup() {
   Serial.begin(115200);
 
   // pinos output ou input
-   pinMode(TRIGGER_PIN, OUTPUT);
-  pinMode(ECHO_PIN, INPUT);
+  pinMode(TRIGGER_ULTRA, OUTPUT);
+  pinMode(ECHO_ULTRA, INPUT);
+  // dht começar
+  dht.begin();
 
   Serial.println("Conectando ao WiFi");
   WiFi.begin(ssid, pass);
@@ -52,13 +65,13 @@ void setup() {
 }
 
 long lerDistancia() {
-  digitalWrite(TRIGGER_PIN, LOW);
+  digitalWrite(TRIGGER_ULTRA, LOW);
   delayMicroseconds(2);
-  digitalWrite(TRIGGER_PIN, HIGH);
+  digitalWrite(TRIGGER_ULTRA, HIGH);
   delayMicroseconds(10);
-  digitalWrite(TRIGGER_PIN, LOW);
+  digitalWrite(TRIGGER_ULTRA, LOW);
   
-  long duracao = pulseIn(ECHO_PIN, HIGH);
+  long duracao = pulseIn(ECHO_ULTRA, HIGH);
   long distancia = duracao * 349.24 / 2 / 10000;
   
   return distancia;
@@ -77,7 +90,23 @@ void loop() {
   
   delay(500);
 
+
+  float umidade = dht.readHumidity();
+  float temperatura = dht.readTemperature();
+  
+  if (isnan(umidade) || isnan(temperatura)) {
+    Serial.println("Erro na leitura do DHT11");
+  }else{
+  
+    Serial.print("Umidade: ");
+    Serial.print(umidade);
+    Serial.print("%  Temperatura: ");
+    Serial.print(temperatura);
+    Serial.println("°C");
+  }
+
+
   mqtt.loop();
-  delay(1000);
+  delay(2000);
 
 }
