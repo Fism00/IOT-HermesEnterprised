@@ -1,17 +1,21 @@
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 
-WiFiClient client;
+WiFiClientSecure client;
 PubSubClient mqtt(client);
 
 //pin usados
-
+const byte TRIGGER_ULTRA_1 = 25;
+const byte ECHO_ULTRA_1 = 33;
+const byte TRIGGER_ULTRA_2 = 27;
+const byte ECHO_ULTRA_2 = 34;
 
 //constantes p/broker
-const String URL   = "test.mosquitto.org";
-const int PORT     = 1883;
-const String USR   = "";
-const String PASS  = "";
+const String URL   = "d1afbd3a85c7409fa6447c6f1f6ea1ae.s1.eu.hivemq.cloud";
+const int PORT     = 8883;
+const String USR   = "Placa_s2";
+const String PASS  = "Placa_s2";
 const String topic = "DSM1";
 
 //constantes p/wifi
@@ -21,6 +25,15 @@ const String pass = "8120gv08";
 void setup() {
   
   Serial.begin(115200);
+  client.setInsecure();
+
+// designação
+
+  pinMode(TRIGGER_ULTRA_1 ,OUTPUT);
+  pinMode(TRIGGER_ULTRA_2 ,OUTPUT);
+  pinMode(ECHO_ULTRA_1 ,INPUT);
+  pinMode(ECHO_ULTRA_2 ,INPUT);
+
 
   Serial.println("Conectando ao WiFi");
   WiFi.begin(ssid, pass);
@@ -45,7 +58,58 @@ void setup() {
 
 }
 
+long lerPresenca_1() {
+  digitalWrite(TRIGGER_ULTRA_1, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIGGER_ULTRA_1, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIGGER_ULTRA_1, LOW);
+  
+  long duracao = pulseIn(ECHO_ULTRA_1, HIGH);
+  long distancia_1 = duracao * 349.24 / 2 / 10000;
+  
+  return distancia_1;
+}
+
+long lerPresenca_2() {
+  digitalWrite(TRIGGER_ULTRA_2, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIGGER_ULTRA_2, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIGGER_ULTRA_2, LOW);
+  
+  long duracao = pulseIn(ECHO_ULTRA_2, HIGH);
+  long distancia_2 = duracao * 349.24 / 2 / 10000;
+  
+  return distancia_2;
+}
+
 void loop() {
+
+  long presenca_1 = lerPresenca_1();
+  long presenca_2 = lerPresenca_2();
+  
+  Serial.print("Distância sensor 1: ");
+  Serial.print(presenca_1);
+  Serial.println(" cm");
+
+  if (presenca_1 < 10) {
+    Serial.println("Objeto próximo do primeiro sensor!");
+  }
+
+   Serial.println("---");
+
+  Serial.print("Distância sensor 2: ");
+  Serial.print(presenca_2);
+  Serial.println(" cm");
+
+   if (presenca_2 < 10) {
+    Serial.println("Objeto próximo do segundo sensor!");
+  }
+
+  Serial.println("---");
+
+  delay(500);
 
   mqtt.loop();
   delay(2000);
