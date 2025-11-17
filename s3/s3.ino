@@ -21,12 +21,22 @@ const byte ECHO_PIN = 18;
 
 Servo meuServo;
 const byte SERVO_PIN = 21;
+int estado_movimento = 0;
+
+Servo meuServo2;
+const byte SERVO2_PIN = 19;
+
+
 
 void setup() {
   Serial.begin(115200);
   pinMode(TRIGGER_PIN, OUTPUT);
   pinMode(ECHO_PIN, INPUT);
   meuServo.attach(SERVO_PIN);
+  meuServo2.attach(SERVO2_PIN);
+
+  meuServo.write(90);
+  meuServo2.write(90);
 }
 
 long lerDistancia() {
@@ -50,19 +60,27 @@ void loop() {
   Serial.println(" cm");
   
   if (distancia < 10) {
-    Serial.println("Objeto próximo!");
-      for (int pos = 0; pos <= 180; pos +=1) {
-        meuServo.write(pos);
-        delay(15);
-      }
-      for (int pos = 180; pos >= 0; pos -=1) {
-        meuServo.write(pos);
-        delay(15);
-      }
+    if (estado_movimento == 0) {
+      Serial.println("Objeto próximo!");
+      meuServo.write(180);
+      meuServo2.write(0);
+      estado_movimento = 1;
+
+      delay(1500);
+    } else if (estado_movimento == 1){
+      Serial.println("Objeto próximo!");
+      meuServo.write(0);
+      meuServo2.write(180);
+      estado_movimento = 0;
+
+      delay (1500);
+    }
     
-    };
-     delay(500);
+ delay(500);
   }
+
+  delay(50);
+}
   
 
 
