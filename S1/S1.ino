@@ -92,9 +92,9 @@ long lerDistancia() {
 }
 void loop() {
 
-  if(iluminacao=="claro"){
+  if(iluminacao=="escuro"){
     digitalWrite(LED, HIGH);
-  } else if(iluminacao=="escuro") {
+  } else if(iluminacao=="claro") {
     digitalWrite(LED, LOW);
   }else{
     digitalWrite(LED, LOW);
@@ -110,6 +110,7 @@ void loop() {
   
   if (distancia < 10) {
     Serial.println("Objeto próximo!");
+    mqtt.publish(topicPresença.c_str(), "Esteve na estação 1");
   }
   
   delay(500);
@@ -122,7 +123,7 @@ void loop() {
   Serial.print(" - Tensão: ");
   Serial.println(tensao);
   
-  if (leituraLDR > 3000) {
+  if (leituraLDR > 4000) {
     Serial.println("Ambiente escuro");
     iluminacao = "escuro";
   } else {
@@ -147,15 +148,15 @@ void loop() {
 
   }
 
-  if (Serial.available()>0){
+  delay(5000);
+
   mqtt.publish(topicIlum.c_str(), iluminacao.c_str());
   mqtt.publish(topicTemp.c_str(), String(temperatura).c_str());
   mqtt.publish(topicUmidade.c_str(), String(umidade).c_str());
-  }
 
- if(iluminacao=="claro"){
+ if(iluminacao=="escuro"){
     digitalWrite(LED, HIGH);
-  } else if(iluminacao=="escuro") {
+  } else if(iluminacao=="claro") {
     digitalWrite(LED, LOW);
   }else{
     digitalWrite(LED, LOW);
