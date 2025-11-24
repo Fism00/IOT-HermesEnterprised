@@ -18,6 +18,9 @@ const String Mytopic = "Kaus";
 const String OtherTopic = "Klahold";
 const byte TRIGGER_PIN = 5;
 const byte ECHO_PIN = 18;
+const byte PINO_LED = 35;
+const String topicIlum = "IOT-HermesEnterprise/S1/Ilum";
+
 
 Servo meuServo;
 const byte SERVO_PIN = 21;
@@ -27,6 +30,28 @@ Servo meuServo2;
 const byte SERVO2_PIN = 19;
 
 
+void callback(char* topic, byte* payload, unsigned int length) {
+  String mensagem;
+
+ 
+  for (unsigned int i = 0; i < length; i++)
+    mensagem += (char)payload[i];
+
+  Serial.print("Recebido em [");
+  Serial.print(topic);
+  Serial.print("]: ");
+  Serial.println(mensagem);
+
+ 
+  if (String(topic) == topicIlum) {
+
+    if (mensagem == "escuro")
+      digitalWrite(PINO_LED, HIGH);  // Liga LED
+
+    else if (mensagem == "claro")
+      digitalWrite(PINO_LED, LOW);   // Desliga LED
+  }
+}
 
 void setup() {
   Serial.begin(115200);
@@ -37,7 +62,15 @@ void setup() {
 
   meuServo.write(90);
   meuServo2.write(90);
+
+  mqtt.subscribe(topicIlum.c_str());
+  mqtt.setCallback(callback);
+
+  pinMode(PINO_LED, OUTPUT);
+  digitalWrite(PINO_LED, LOW);
 }
+
+
 
 long lerDistancia() {
   digitalWrite(TRIGGER_PIN, LOW);
