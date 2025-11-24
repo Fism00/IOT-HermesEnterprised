@@ -19,7 +19,7 @@ const byte RGB_B = 25;
 
 //variaveis
 
-bool escuro = false;
+String iluminacao = "";
 
 //dh11 config
 #define DHT_PIN 4
@@ -31,7 +31,12 @@ const String URL   = "d1afbd3a85c7409fa6447c6f1f6ea1ae.s1.eu.hivemq.cloud";
 const int PORT     = 8883;
 const String USR   = "Placa_s1";
 const String PASS  = "Placa_s1";
-const String topic = "DSM1";
+
+//Topicos
+const String topicPresença = "IOT-HermesEnterprise/S1/Prensença";
+const String topicTemp = "IOT-HermesEnterprise/S1/Temp";
+const String topicUmidade = "IOT-HermesEnterprise/S1/Umi";
+const String topicIlum = "IOT-HermesEnterprise/S1/Ilum";
 
 //constantes p/wifi
 const String ssid = "FIESC_IOT_EDU";
@@ -87,9 +92,11 @@ long lerDistancia() {
 }
 void loop() {
 
-  if(escuro==true){
+  if(iluminacao=="claro"){
     digitalWrite(LED, HIGH);
-  } else {
+  } else if(iluminacao=="escuro") {
+    digitalWrite(LED, LOW);
+  }else{
     digitalWrite(LED, LOW);
   };
 
@@ -117,10 +124,10 @@ void loop() {
   
   if (leituraLDR > 3000) {
     Serial.println("Ambiente escuro");
-    escuro = true;
+    iluminacao = "escuro";
   } else {
     Serial.println("Ambiente claro");
-    escuro = false;
+    iluminacao = "claro";
   }
   
   delay(500);
@@ -140,9 +147,17 @@ void loop() {
 
   }
 
-  if(escuro==true){
+  if (Serial.available()>0){
+  mqtt.publish(topicIlum.c_str(), iluminacao.c_str());
+  mqtt.publish(topicTemp.c_str(), String(temperatura).c_str());
+  mqtt.publish(topicUmidade.c_str(), String(umidade).c_str());
+  }
+
+ if(iluminacao=="claro"){
     digitalWrite(LED, HIGH);
-  } else {
+  } else if(iluminacao=="escuro") {
+    digitalWrite(LED, LOW);
+  }else{
     digitalWrite(LED, LOW);
   };
 
