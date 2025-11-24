@@ -1,9 +1,10 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
+#include <WiFiClientSecure.h>
 #include <DHT.h>
 
 
-WiFiClient client;
+WiFiClientSecure client;
 PubSubClient mqtt(client);
 //pin usados
 
@@ -15,17 +16,27 @@ const byte RGB_R = 14;
 const byte RGB_G = 26;
 const byte RGB_B = 25;
 
+
+//variaveis
+
+String iluminacao = "";
+
 //dh11 config
 #define DHT_PIN 4
 #define DHTTYPE DHT11
 DHT dht(DHT_PIN, DHTTYPE);
 
 //constantes p/broker
-const String URL   = "test.mosquitto.org";
-const int PORT     = 1883;
-const String USR   = "";
-const String PASS  = "";
-const String topic = "DSM1";
+const String URL   = "d1afbd3a85c7409fa6447c6f1f6ea1ae.s1.eu.hivemq.cloud";
+const int PORT     = 8883;
+const String USR   = "Placa_s1";
+const String PASS  = "Placa_s1";
+
+//Topicos
+const String topicPresença = "IOT-HermesEnterprise/S1/Prensença";
+const String topicTemp = "IOT-HermesEnterprise/S1/Temp";
+const String topicUmidade = "IOT-HermesEnterprise/S1/Umi";
+const String topicIlum = "IOT-HermesEnterprise/S1/Ilum";
 
 //constantes p/wifi
 const String ssid = "FIESC_IOT_EDU";
@@ -34,10 +45,13 @@ const String pass = "8120gv08";
 void setup() {
   
   Serial.begin(115200);
+  client.setInsecure();
 
   // pinos output ou input
   pinMode(TRIGGER_ULTRA, OUTPUT);
   pinMode(ECHO_ULTRA, INPUT);
+  pinMode(LED,OUTPUT);
+
   // dht começar
   dht.begin();
 
@@ -78,6 +92,16 @@ long lerDistancia() {
 }
 void loop() {
 
+  if(iluminacao=="escuro"){
+    digitalWrite(LED, HIGH);
+  } else if(iluminacao=="claro") {
+    digitalWrite(LED, LOW);
+  }else{
+    digitalWrite(LED, LOW);
+  };
+
+  delay(2);
+
    long distancia = lerDistancia();
   
   Serial.print("Distância: ");
@@ -86,10 +110,28 @@ void loop() {
   
   if (distancia < 10) {
     Serial.println("Objeto próximo!");
+    mqtt.publish(topicPresença.c_str(), "Esteve na estação 1");
   }
   
   delay(500);
 
+  int leituraLDR = analogRead(LDR);
+  float tensao = (leituraLDR * 3.3) / 4095.0;
+  
+  Serial.print("Leitura LDR: ");
+  Serial.print(leituraLDR);
+  Serial.print(" - Tensão: ");
+  Serial.println(tensao);
+  
+  if (leituraLDR > 4000) {
+    Serial.println("Ambiente escuro");
+    iluminacao = "escuro";
+  } else {
+    Serial.println("Ambiente claro");
+    iluminacao = "claro";
+  }
+  
+  delay(500);
 
   float umidade = dht.readHumidity();
   float temperatura = dht.readTemperature();
@@ -103,8 +145,22 @@ void loop() {
     Serial.print("%  Temperatura: ");
     Serial.print(temperatura);
     Serial.println("°C");
+
   }
 
+  delay(5000);
+
+  mqtt.publish(topicIlum.c_str(), iluminacao.c_str());
+  mqtt.publish(topicTemp.c_str(), String(temperatura).c_str());
+  mqtt.publish(topicUmidade.c_str(), String(umidade).c_str());
+
+ if(iluminacao=="escuro"){
+    digitalWrite(LED, HIGH);
+  } else if(iluminacao=="claro") {
+    digitalWrite(LED, LOW);
+  }else{
+    digitalWrite(LED, LOW);
+  };
 
   mqtt.loop();
   delay(2000);
